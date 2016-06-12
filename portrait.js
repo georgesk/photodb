@@ -3,7 +3,7 @@ function onFailure(err) {
 }
 
 jQuery(document).ready(function () {
-
+    document.snapshot=false; // pas encore de photo au démarrage
     var video = document.querySelector('#webcam');
     var button0 = document.querySelector('#screenshot-button');
     var button1 = document.querySelector('#reset-button');
@@ -44,6 +44,7 @@ jQuery(document).ready(function () {
         ctxCanvas.drawImage(video, 75, 10, 170, 220, 0,0,320,240);
 	videoLive.css({display: "none",});
 	shot.css({display: "block"});
+	document.snapshot=true;
     }
 
     function reset(){
@@ -72,6 +73,11 @@ function envoyer(){
     var prenom=$("#prenom").val();
     var canvas=$("#screenshot-canvas").get(0);
     var photodata=canvas.toDataURL("image/jpeg");
+    if (! document.snapshot){
+	// il n'y a pas de photo dans le canevas ? on sort !
+	alert("La photo n'est pas encore prise !");
+	return false;
+    }
     $.ajax("envoi.php",{
 	type: "POST",
 	data:{
