@@ -4,7 +4,9 @@
     <meta http-equiv="content-type" content="text/html;charset=utf-8" />
     <title>Saisie de portrait</title>
     <script src="http://localhost/javascript/jquery/jquery.js" type="text/javascript"></script>
-    <script type="text/javascript" src="portrait.js"></script>
+    <link rel="stylesheet" href="http://localhost/javascript/jquery-ui/themes/smoothness/jquery-ui.css"/>
+    <script src="http://localhost/javascript/jquery-ui/jquery-ui.js" type="text/javascript"></script>
+      <script type="text/javascript" src="portrait.js"></script>
     <link rel="stylesheet" href="portrait.css" type="text/css"/>
 </head>
 <body>
@@ -34,7 +36,21 @@
           <p><button id="reset-button">Refaire la photo</button></p>
           <canvas id="screenshot-canvas"> </canvas>
 	</div>
+	<form action="" method="post" onsubmit="return submit()">
+	  <fieldset>
+	    <legend>Identité</legend>
+	    <table>
+	      <tr>
+		<th>Nom :</th>
+		<td><input type="text" name="nom" id="nom"/></td>
+	      </tr>
+	      <tr>
+		<th>Prénom :</th>
+		<td><input type="text" name="prenom" id="prenom"/></td>
+	      </tr>
+	    </table>
+	  </fieldset>
+	</form>
     </div>
 </body>
 </html>
-

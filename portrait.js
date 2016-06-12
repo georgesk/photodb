@@ -1,6 +1,7 @@
 function onFailure(err) {
     alert("Erreur : " + err.name);
 }
+
 jQuery(document).ready(function () {
 
     var video = document.querySelector('#webcam');
@@ -46,4 +47,16 @@ jQuery(document).ready(function () {
 	shot.css({display: "none"});
 	videoLive.css({display: "block",});
     }
+
+    $("#nom").autocomplete({
+	minLength: 3,
+	source:    function(term, callback) {
+            $.getJSON("chercheNom.php", term, callback);
+	},
+    });
+    $("#prenom").autocomplete({
+	source:    function(term, callback) {
+            $.getJSON("cherchePrenom.php", {nom: $("#nom").val(), prenom: $("#prenom").val()}, callback);
+	},
+    });
 });
