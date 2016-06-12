@@ -1,6 +1,9 @@
 <?php
 // envoi de données vers la base de données. les données sont dans $_POST
 // les clés d'accès aux données sont "nom", "prenom", "photo".
+
+include_once "commun.php";
+
 header('Content-Type: application/json');
 $nom=$_POST["nom"];
 $prenom=$_POST["prenom"];
@@ -32,9 +35,7 @@ if ($row["photo"]){
     
 } else {
     // il n'y a pas de photo, on en enregistre une
-    $nomFichier=substr($nom,0,3)."_";
-    $nomfichier=uniqid("photos/".$nomFichier).".jpg";
-    $data["fichier"]=$nomfichier;
+    $nomfichier=nommage($nom, $prenom, $data);
     $pattern='@^data:image/jpeg;base64,(.*)@';
     preg_match($pattern, $photo, $matches);
     $base64=$matches[1];

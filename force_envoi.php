@@ -3,6 +3,9 @@
 // les clés d'accès aux données sont "nom", "prenom", "photo".
 // l'utilisateur a déjà approuvé l'écrasement d'un fichier existant au
 // préalable
+
+include_once "commun.php";
+
 header('Content-Type: application/json');
 $nom=$_POST["nom"];
 $prenom=$_POST["prenom"];
@@ -17,9 +20,7 @@ if ($row && $row["photo"]){
     // il y a déjà une photo, on l'efface du système de fichier
     unlink($row["photo"]);
     // on en enregistre la nouvelle photo
-    $nomFichier=substr($nom,0,3)."_";
-    $nomfichier=uniqid("photos/".$nomFichier).".jpg";
-    $data["fichier"]=$nomfichier;
+    $nomfichier=nommage($nom, $prenom, $data);
     $pattern='@^data:image/jpeg;base64,(.*)@';
     preg_match($pattern, $photo, $matches);
     $base64=$matches[1];
