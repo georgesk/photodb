@@ -1,6 +1,6 @@
 <?php
 header('Content-Type: application/json');
-$db = new SQLite3('names.db');
+$db = new SQLite3('db/names.db');
 $nom=$_GET["nom"];
 $term=$_GET["prenom"];
 $results = $db->query("SELECT givenname FROM person where surname = '".$nom."' and givenname like '%".$term."%'");

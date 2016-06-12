@@ -74,7 +74,7 @@ if __name__=="__main__":
     try:
         outfile=sys.argv[2]
     except:
-        outfile="names.db"
+        outfile="db/names.db"
     connection = sqlite3.connect(outfile)
     c = connection.cursor()
     c.execute('''CREATE TABLE IF NOT EXISTS person

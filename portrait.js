@@ -22,7 +22,10 @@ jQuery(document).ready(function () {
     if (navigator.getUserMedia) {
         navigator.getUserMedia
         (
-            { video: true },
+            { video: {
+		width:320,
+		height:240,
+	    }},
             function (localMediaStream) {
                 video.src = window.URL.createObjectURL(localMediaStream);
             }, onFailure);
@@ -38,7 +41,7 @@ jQuery(document).ready(function () {
     function snapshot() {
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
-        ctxCanvas.drawImage(video, 150, 20, 340, 440, 0,0,640,480);
+        ctxCanvas.drawImage(video, 75, 10, 170, 220, 0,0,320,240);
 	videoLive.css({display: "none",});
 	shot.css({display: "block"});
     }
@@ -60,3 +63,102 @@ jQuery(document).ready(function () {
 	},
     });
 });
+
+function envoyer(){
+    var nom=$("#nom").val();
+    var prenom=$("#prenom").val();
+    var canvas=$("#screenshot-canvas").get(0);
+    var photodata=canvas.toDataURL("image/jpeg");
+    $.ajax("envoi.php",{
+	type: "POST",
+	data:{
+	    prenom: prenom,
+	    nom: nom,
+	    photo: photodata,
+	},
+    }).done(
+	function(data){
+	    console.log("grrr done", data)
+	    if (data["statut"]=="dejavu"){
+		// il y a déjà une photo!
+		$("#dialog").html(
+		    "<img style='float:right' alt='image'/>" +
+			"<p>Il y a déjà une photo enregistrée pour " +
+			nom + " " + prenom +
+			"\nVoulez-vous la remplacer ?</p>"
+		);
+		$("#dialog img").attr("src", data["base64"]);
+		$("#dialog").dialog({
+		    width: 500,
+		    buttons: [
+			{
+			    text: "Ok",
+			    icons: {
+				primary: "ui-icon-heart"
+			    },
+			    click: function() {
+				$( this ).dialog( "close" );
+				forcerEnvoi();
+			    }
+ 			    //showText: false
+			},
+			{
+			    text: "Échappement",
+			    click: function() {
+				$( this ).dialog( "close" );
+			    }
+ 			    //showText: false
+			},
+		    ]
+		});
+	    } else { //data["statut"]!="dejavu"
+		// c'est une nouvelle photo
+		$("#dialog").html(
+		    "<img style='float:right' alt='image'/>" +
+			"<p>Photo enregistrée pour " +
+			nom + " " + prenom +
+			" avec succès</p>"
+		);
+		$("#dialog img").attr("src", data["base64"]);		
+		$("#dialog").dialog({
+		    width: 500,
+		    buttons: [
+			{
+			    text: "Vu",
+			    icons: {
+				primary: "ui-icon-heart"
+			    },
+			    click: function() {
+				$( this ).dialog( "close" );
+				forcerEnvoi();
+			    }
+ 			    //showText: false
+			},
+		    ]
+		});
+	    }
+	}
+    )
+    return false;
+}
+
+function forcerEnvoi(){
+    // fonction de rappel qui force l'envoi d'une photo après confirmation.
+    var nom=$("#nom").val();
+    var prenom=$("#prenom").val();
+    var canvas=$("#screenshot-canvas").get(0);
+    var photodata=canvas.toDataURL("image/jpeg");
+    $.ajax("force_envoi.php",{
+	type: "POST",
+	data:{
+	    prenom: prenom,
+	    nom: nom,
+	    photo: photodata,
+	},
+    }).done(
+	function(data){
+	    console.log("grrr done", data)
+	}
+    )
+    return false;
+}
