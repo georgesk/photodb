@@ -56,6 +56,9 @@ jQuery(document).ready(function () {
 	source:    function(term, callback) {
             $.getJSON("chercheNom.php", term, callback);
 	},
+	// effacer le prénom pendant qu'on bricole le nom !
+	search: function( event, ui ) {$("#prenom").val("")},
+	change: function( event, ui ) {$("#prenom").val("")},
     });
     $("#prenom").autocomplete({
 	source:    function(term, callback) {
