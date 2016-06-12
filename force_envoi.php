@@ -1,6 +1,8 @@
 <?php
 // envoi de données vers la base de données. les données sont dans $_POST
 // les clés d'accès aux données sont "nom", "prenom", "photo".
+// l'utilisateur a déjà approuvé l'écrasement d'un fichier existant au
+// préalable
 header('Content-Type: application/json');
 $nom=$_POST["nom"];
 $prenom=$_POST["prenom"];
@@ -12,16 +14,9 @@ $db = new SQLite3('db/names.db');
 $result = $db->query("SELECT photo FROM person where surname = '".$nom."' and givenname = '".$prenom."'");
 $row=$result->fetchArray();
 if ($row && $row["photo"]){
-    // il y a déjà une photo
-    $data["statut"]="dejavu";
-    
-    $data["photo"]=$row["photo"];
-    $type = pathinfo($data["photo"], PATHINFO_EXTENSION);
-    $photodata = file_get_contents($data["photo"]);
-    $data["base64"] = 'data:image/' . $type . ';base64,' . base64_encode($photodata);
-    
-} else {
-    // il n'y a pas de photo, on en enregistre une
+    // il y a déjà une photo, on l'efface du système de fichier
+    unlink($row["photo"]);
+    // on en enregistre la nouvelle photo
     $nomFichier=substr($nom,0,3)."_";
     $nomfichier=uniqid("photos/".$nomFichier).".jpg";
     $data["fichier"]=$nomfichier;

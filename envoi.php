@@ -9,9 +9,19 @@ $data=[];
 
 // vérification que la photo n'est pas déjà présente
 $db = new SQLite3('db/names.db');
+$result = $db->query("SELECT count(*) as count FROM person where surname = '".$nom."' and givenname = '".$prenom."'");
+// s'il y a zéro lignes, il faut traiter le cas de non/prénom inexistants
+$row = $result->fetchArray();
+$numRows = $row['count'];
+if (intval($numRows)==0){
+    $data["statut"]="nouveau";
+    echo json_encode($data);
+    return;
+}
+// il y a au moins une ligne c'est sûr
 $result = $db->query("SELECT photo FROM person where surname = '".$nom."' and givenname = '".$prenom."'");
 $row=$result->fetchArray();
-if ($row && $row["photo"]){
+if ($row["photo"]){
     // il y a déjà une photo
     $data["statut"]="dejavu";
     

@@ -78,7 +78,6 @@ function envoyer(){
 	},
     }).done(
 	function(data){
-	    console.log("grrr done", data)
 	    if (data["statut"]=="dejavu"){
 		// il y a déjà une photo!
 		$("#dialog").html(
@@ -111,7 +110,7 @@ function envoyer(){
 			},
 		    ]
 		});
-	    } else { //data["statut"]!="dejavu"
+	    } else if (data["statut"]=="ok"){ 
 		// c'est une nouvelle photo
 		$("#dialog").html(
 		    "<img style='float:right' alt='image'/>" +
@@ -130,7 +129,36 @@ function envoyer(){
 			    },
 			    click: function() {
 				$( this ).dialog( "close" );
-				forcerEnvoi();
+			    }
+ 			    //showText: false
+			},
+		    ]
+		});
+	    } else { // dernière possibilité : data["statut"]=="nouveau"
+		$("#dialog").html(
+		    "<p>On ne trouve pas " +
+			nom + " " + prenom +
+			" dans la base de données actuelle</p>" +
+			"<p>Voulez-vous créer cet enregistrement ?</p>"
+		);
+		$("#dialog").dialog({
+		    width: 500,
+		    buttons: [
+			{
+			    text: "OK",
+			    icons: {
+				primary: "ui-icon-heart"
+			    },
+			    click: function() {
+				$( this ).dialog( "close" );
+				nouvelEnvoi();
+			    }
+ 			    //showText: false
+			},
+			{
+			    text: "Échappement",
+			    click: function() {
+				$( this ).dialog( "close" );
 			    }
  			    //showText: false
 			},
@@ -157,7 +185,71 @@ function forcerEnvoi(){
 	},
     }).done(
 	function(data){
-	    console.log("grrr done", data)
+	    $("#dialog").html(
+		"<img style='float:right' alt='image'/>" +
+		    "<p>Photo enregistrée pour " +
+		    nom + " " + prenom +
+		    " avec succès</p>"
+	    );
+	    $("#dialog img").attr("src", data["base64"]);		
+	    $("#dialog").dialog({
+		width: 500,
+		buttons: [
+		    {
+			text: "Vu",
+			icons: {
+			    primary: "ui-icon-heart"
+			},
+			click: function() {
+			    $( this ).dialog( "close" );
+			}
+ 			//showText: false
+		    },
+		]
+	    });
+	}
+    )
+    return false;
+}
+
+function nouvelEnvoi(){
+    // on envoie la photo d'une personne encore inconnue de la base de
+    // données, donc on doit faire un INSERT, pas un UPDATE
+    var nom=$("#nom").val();
+    var prenom=$("#prenom").val();
+    var canvas=$("#screenshot-canvas").get(0);
+    var photodata=canvas.toDataURL("image/jpeg");
+    $.ajax("nouvel_envoi.php",{
+	type: "POST",
+	data:{
+	    prenom: prenom,
+	    nom: nom,
+	    photo: photodata,
+	},
+    }).done(
+	function(data){
+	    $("#dialog").html(
+		"<img style='float:right' alt='image'/>" +
+		    "<p>Photo enregistrée pour " +
+		    nom + " " + prenom +
+		    " avec succès</p>"
+	    );
+	    $("#dialog img").attr("src", data["base64"]);		
+	    $("#dialog").dialog({
+		width: 500,
+		buttons: [
+		    {
+			text: "Vu",
+			icons: {
+			    primary: "ui-icon-heart"
+			},
+			click: function() {
+			    $( this ).dialog( "close" );
+			}
+ 			//showText: false
+		    },
+		]
+	    });
 	}
     )
     return false;
