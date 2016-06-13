@@ -7,15 +7,24 @@
 include_once "commun.php";
 
 header('Content-Type: application/json');
-$nom=protegeSQL($_POST["nom"]);
-$prenom=protegeSQL($_POST["prenom"]);
+$nom=$_POST["nom"];
+$prenom=$_POST["prenom"];
 $photo=$_POST["photo"];
 $data=[];
 
 // vérification que la photo n'est pas déjà présente
-$db = new SQLite3('db/names.db');
-$result = $db->query("SELECT photo FROM person where surname = '".$nom."' and givenname = '".$prenom."'");
-$row=$result->fetchArray();
+try{
+    $pdo = new PDO('sqlite:'.dirname(__FILE__).'/db/names.db');
+    $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION); // ERRMODE_WARNING | ERRMODE_EXCEPTION | ERRMODE_SILENT
+} catch(Exception $e) {
+    echo "Impossible d'accéder à la base de données SQLite : ".$e->getMessage();
+    die();
+}
+
+$sth=$pdo->prepare ("SELECT photo FROM person where surname = ? and givenname = ?");
+$result = $sth->execute(array($nom,$prenom));
+$row=$sth->fetch();
 if ($row && $row["photo"]){
     // il y a déjà une photo, on l'efface du système de fichier
     unlink($row["photo"]);
@@ -29,12 +38,10 @@ if ($row && $row["photo"]){
     // refait le format d'image qui est fort bizarre
     $cmd="convert -resize 170x220\\! ".$nomfichier." ".$nomfichier.".tmp && mv ".$nomfichier.".tmp ".$nomfichier;
     system($cmd);
-    
-    $stm=$db->prepare( 'UPDATE person SET photo=:photo WHERE surname=:nom and givenname=:prenom' );
-    $stm->bindValue(':photo', $nomfichier, SQLITE3_TEXT);
-    $stm->bindValue(':nom', $nom, SQLITE3_TEXT);
-    $stm->bindValue(':prenom', $prenom, SQLITE3_TEXT);
-    $result = $stm->execute();
+    // on insère un nouvel enregistrement dans la base de données
+    $sth = $pdo->prepare(" INSERT INTO person (surname, givenname, photo) VALUES (?,?,?)");
+    $result=$sth->execute(Array($nom,$prenom,$nomfichier));
+    $data["result"]=$result;
     // on renvoie les données du fichier photo comme feedback
     $photodata = file_get_contents($nomfichier);
     $data["base64"] = 'data:image/jpeg;base64,' . base64_encode($photodata);

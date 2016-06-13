@@ -5,25 +5,31 @@
 include_once "commun.php";
 
 header('Content-Type: application/json');
-$nom=protegeSQL($_POST["nom"]);
-$prenom=protegeSQL($_POST["prenom"]);
+$nom=$_POST["nom"];
+$prenom=$_POST["prenom"];
 $photo=$_POST["photo"];
 $data=[];
 
 // vérification que la photo n'est pas déjà présente
-$db = new SQLite3('db/names.db');
-$result = $db->query("SELECT count(*) as count FROM person where surname = '".$nom."' and givenname = '".$prenom."'");
+try{
+    $pdo = new PDO('sqlite:'.dirname(__FILE__).'/db/names.db');
+    $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION); // ERRMODE_WARNING | ERRMODE_EXCEPTION | ERRMODE_SILENT
+} catch(Exception $e) {
+    echo "Impossible d'accéder à la base de données SQLite : ".$e->getMessage();
+    die();
+}
+
+$sth=$pdo->prepare ("SELECT photo FROM person where surname = ? and givenname = ?");
+$result = $sth->execute(array($nom,$prenom));
+$row=$sth->fetch();
 // s'il y a zéro lignes, il faut traiter le cas de non/prénom inexistants
-$row = $result->fetchArray();
-$numRows = $row['count'];
-if (intval($numRows)==0){
+if (! $row){
     $data["statut"]="nouveau";
     echo json_encode($data);
     return;
 }
 // il y a au moins une ligne c'est sûr
-$result = $db->query("SELECT photo FROM person where surname = '".$nom."' and givenname = '".$prenom."'");
-$row=$result->fetchArray();
 if ($row["photo"]){
     // il y a déjà une photo
     $data["statut"]="dejavu";
@@ -44,12 +50,8 @@ if ($row["photo"]){
     // refait le format d'image qui est fort bizarre
     $cmd="convert -resize 170x220\\! ".$nomfichier." ".$nomfichier.".tmp && mv ".$nomfichier.".tmp ".$nomfichier;
     system($cmd);
-    
-    $stm=$db->prepare( 'UPDATE person SET photo=:photo WHERE surname=:nom and givenname=:prenom' );
-    $stm->bindValue(':photo', $nomfichier, SQLITE3_TEXT);
-    $stm->bindValue(':nom', $nom, SQLITE3_TEXT);
-    $stm->bindValue(':prenom', $prenom, SQLITE3_TEXT);
-    $result = $stm->execute();
+    $sth=$pdo->prepare( 'UPDATE person SET photo=? WHERE surname=? and givenname=?' );
+    $result = $sth->execute(Array($nomfichier,$nom,$prenom));
     // on renvoie les données du fichier photo comme feedback
     $photodata = file_get_contents($nomfichier);
     $data["base64"] = 'data:image/jpeg;base64,' . base64_encode($photodata);

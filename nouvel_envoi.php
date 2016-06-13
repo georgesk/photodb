@@ -7,12 +7,19 @@
 include_once "commun.php";
 
 header('Content-Type: application/json');
-$nom=protegeSQL($_POST["nom"]);
-$prenom=protegeSQL($_POST["prenom"]);
+$nom=$_POST["nom"];
+$prenom=$_POST["prenom"];
 $photo=$_POST["photo"];
 $data=[];
 
-$db = new SQLite3('db/names.db');
+try{
+    $pdo = new PDO('sqlite:'.dirname(__FILE__).'/db/names.db');
+    $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION); // ERRMODE_WARNING | ERRMODE_EXCEPTION | ERRMODE_SILENT
+} catch(Exception $e) {
+    echo "Impossible d'accéder à la base de données SQLite : ".$e->getMessage();
+    die();
+}
 // on enregistre la photo dans le système de fichiers
 $nomfichier=nommage($nom, $prenom, $data);
 $pattern='@^data:image/jpeg;base64,(.*)@';
@@ -24,9 +31,8 @@ file_put_contents($nomfichier, $decoded);
 $cmd="convert -resize 170x220\\! ".$nomfichier." ".$nomfichier.".tmp && mv ".$nomfichier.".tmp ".$nomfichier;
 system($cmd);
 // on insère un nouvel enregistrement dans la base de données
-$query="INSERT INTO person (surname, givenname, photo) VALUES ('".$nom."','".$prenom."','".$nomfichier."')";
-$data["query"]=$query;
-$result=$db->exec($query);
+$sth = $pdo->prepare(" INSERT INTO person (surname, givenname, photo) VALUES (?,?,?)");
+$result=$sth->execute(Array($nom,$prenom,$nomfichier));
 $data["result"]=$result;
 // on renvoie les données du fichier photo comme feedback
 $photodata = file_get_contents($nomfichier);
