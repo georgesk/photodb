@@ -7,8 +7,8 @@
 include_once "commun.php";
 
 header('Content-Type: application/json');
-$nom=$_POST["nom"];
-$prenom=$_POST["prenom"];
+$nom=protegeSQL($_POST["nom"]);
+$prenom=protegeSQL($_POST["prenom"]);
 $photo=$_POST["photo"];
 $data=[];
 

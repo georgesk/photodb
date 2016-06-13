@@ -9,6 +9,14 @@
 function protege($s){
     return preg_replace('/[^A-Za-z0-9_\-]/', '_', $s);
 }
+/**
+ * Renvoie à coup sûr une chaîne de caractères utilisable pour une requête SQL
+ * @param s une chaîne à protéger
+ * @return un résultat sûr
+ **/
+function protegeSQL($s){
+    return str_replace("'","''");
+}
 
 /**
  * fonction utilisée pour créer les noms de fichiers
