@@ -13,14 +13,6 @@ $photo=$_POST["photo"];
 $data=[];
 
 // vérification que la photo n'est pas déjà présente
-try{
-    $pdo = new PDO('sqlite:'.dirname(__FILE__).'/db/names.db');
-    $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION); // ERRMODE_WARNING | ERRMODE_EXCEPTION | ERRMODE_SILENT
-} catch(Exception $e) {
-    echo "Impossible d'accéder à la base de données SQLite : ".$e->getMessage();
-    die();
-}
 
 $sth=$pdo->prepare ("SELECT photo FROM person where surname = ? and givenname = ?");
 $result = $sth->execute(array($nom,$prenom));
@@ -39,8 +31,8 @@ if ($row && $row["photo"]){
     $cmd="convert -resize 170x220\\! ".$nomfichier." ".$nomfichier.".tmp && mv ".$nomfichier.".tmp ".$nomfichier;
     system($cmd);
     // on insère un nouvel enregistrement dans la base de données
-    $sth = $pdo->prepare(" INSERT INTO person (surname, givenname, photo) VALUES (?,?,?)");
-    $result=$sth->execute(Array($nom,$prenom,$nomfichier));
+    $sth = $pdo->prepare(" UPDATE person SET photo=? WHERE surname=? AND givenname=?");
+    $result=$sth->execute(Array($nomfichier,$nom,$prenom));
     $data["result"]=$result;
     // on renvoie les données du fichier photo comme feedback
     $photodata = file_get_contents($nomfichier);
