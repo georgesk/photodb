@@ -11,8 +11,11 @@ $sth = $pdo->prepare("SELECT givenname
 $data=[];
 $sth->execute(array($nom,"%".$prenom."%"));
 foreach  ($sth->fetchAll() as $row) {
-    array_push($data,$row["givenname"]);
+    if (!in_array($row["givenname"], $data)){
+        array_push($data,$row["givenname"]);
+    }
 }
+sort($data);
 echo json_encode($data);
 
 ?>
