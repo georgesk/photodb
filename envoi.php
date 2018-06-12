@@ -45,7 +45,7 @@ if ($row["photo"]){
     date_default_timezone_set('UTC');
     $date=date('Y-m-d H:i:s');
     $sth=$pdo->prepare( 'UPDATE person SET photo=?, date=? WHERE surname=? and givenname=?' );
-    $result = $sth->execute(Array($nomfichier,$nom,$prenom,$date));
+    $result = $sth->execute(Array($nomfichier,$date,$nom,$prenom));
     // on renvoie les données du fichier photo comme feedback
     $photodata = file_get_contents($nomfichier);
     $data["base64"] = 'data:image/jpeg;base64,' . base64_encode($photodata);

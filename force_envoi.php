@@ -34,7 +34,7 @@ if ($row && $row["photo"]){
     date_default_timezone_set('UTC');
     $date=date('Y-m-d H:i:s');
     $sth = $pdo->prepare(" UPDATE person SET photo=?, date=? WHERE surname=? AND givenname=?");
-    $result=$sth->execute(Array($nomfichier,$nom,$prenom,$date));
+    $result=$sth->execute(Array($nomfichier,$date,$nom,$prenom));
     $data["result"]=$result;
     // on renvoie les données du fichier photo comme feedback
     $photodata = file_get_contents($nomfichier);
