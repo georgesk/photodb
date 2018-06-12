@@ -21,7 +21,7 @@ print_r($_FILES);
 echo "</pre>\n";
 
 if($ok){
-    $cmd="./csv2db.py db/".basename($_FILES['userfile']['name']);
+    $cmd="cd /usr/share/photodb; ./csv2db.py db/".basename($_FILES['userfile']['name']);
     echo "$cmd<br/>\n";
     $lastline=system($cmd);
     echo "$lastline<br/>\n";

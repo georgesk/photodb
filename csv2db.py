@@ -39,7 +39,7 @@ def getReader(csvfile):
     reader=None
     for delimiter in (";", ",", "\t",):
          csvfile.seek(0)
-         reader = csv.DictReader(csvfile, delimiter=";")
+         reader = csv.DictReader(csvfile, delimiter=delimiter)
          fields2=[f for f in reader.fieldnames if secondNamePattern.match(f)]
          fields1=[f for f in reader.fieldnames if firstNamePattern.match(f)]
          if (len(fields2), len(fields1)) == (1, 1):
