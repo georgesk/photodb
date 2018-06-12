@@ -31,8 +31,10 @@ if ($row && $row["photo"]){
     $cmd="convert -resize 170x220\\! ".$nomfichier." ".$nomfichier.".tmp && mv ".$nomfichier.".tmp ".$nomfichier;
     system($cmd);
     // on insère un nouvel enregistrement dans la base de données
-    $sth = $pdo->prepare(" UPDATE person SET photo=? WHERE surname=? AND givenname=?");
-    $result=$sth->execute(Array($nomfichier,$nom,$prenom));
+    date_default_timezone_set('UTC');
+    $date=date('Y-m-d H:i:s');
+    $sth = $pdo->prepare(" UPDATE person SET photo=?, date=? WHERE surname=? AND givenname=?");
+    $result=$sth->execute(Array($nomfichier,$nom,$prenom,$date));
     $data["result"]=$result;
     // on renvoie les données du fichier photo comme feedback
     $photodata = file_get_contents($nomfichier);

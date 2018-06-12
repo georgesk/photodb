@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-import sys, csv, re
+import sys, csv, re, datetime
 import sqlite3
 
 encodingList=[
@@ -50,6 +50,7 @@ def addToDb(row, field2, field1, verbose=False):
     """
     adds surname and given name records to the database.
     """
+    date=datetime.datetime.utcnow().isoformat(sep=' ', timespec='seconds')
     c = connection.cursor()
     surname=row[field2]
     givenname=row[field1]
@@ -59,8 +60,8 @@ def addToDb(row, field2, field1, verbose=False):
         ## the key surname + givenname does not yet exist !
         print("+",end="")
         sys.stdout.flush()
-        c.execute("INSERT INTO person (surname, givenname) VALUES (?,?)",
-                  (surname, givenname))
+        c.execute("INSERT INTO person (surname, givenname, date) VALUES (?,?,?)",
+                  (surname, givenname, date))
         connection.commit()
         return 1
     else:
@@ -78,7 +79,7 @@ if __name__=="__main__":
     connection = sqlite3.connect(outfile)
     c = connection.cursor()
     c.execute('''CREATE TABLE IF NOT EXISTS person
-             (surname text, givenname text, photo text)''')
+             (surname text, givenname text, photo text, date text)''')
     connection.commit()
     
     encoding=find_encoding(infile)

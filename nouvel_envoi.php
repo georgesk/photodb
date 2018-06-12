@@ -23,8 +23,10 @@ file_put_contents($nomfichier, $decoded);
 $cmd="convert -resize 170x220\\! ".$nomfichier." ".$nomfichier.".tmp && mv ".$nomfichier.".tmp ".$nomfichier;
 system($cmd);
 // on insère un nouvel enregistrement dans la base de données
-$sth = $pdo->prepare(" INSERT INTO person (surname, givenname, photo) VALUES (?,?,?)");
-$result=$sth->execute(Array($nom,$prenom,$nomfichier));
+date_default_timezone_set('UTC');
+$date=date('Y-m-d H:i:s');
+$sth = $pdo->prepare(" INSERT INTO person (surname, givenname, photo, date) VALUES (?,?,?,?)");
+$result=$sth->execute(Array($nom,$prenom,$nomfichier,$date));
 $data["result"]=$result;
 // on renvoie les données du fichier photo comme feedback
 $photodata = file_get_contents($nomfichier);

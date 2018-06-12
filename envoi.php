@@ -42,8 +42,10 @@ if ($row["photo"]){
     // refait le format d'image qui est fort bizarre
     $cmd="convert -resize 170x220\\! ".$nomfichier." ".$nomfichier.".tmp && mv ".$nomfichier.".tmp ".$nomfichier;
     system($cmd);
-    $sth=$pdo->prepare( 'UPDATE person SET photo=? WHERE surname=? and givenname=?' );
-    $result = $sth->execute(Array($nomfichier,$nom,$prenom));
+    date_default_timezone_set('UTC');
+    $date=date('Y-m-d H:i:s');
+    $sth=$pdo->prepare( 'UPDATE person SET photo=?, date=? WHERE surname=? and givenname=?' );
+    $result = $sth->execute(Array($nomfichier,$nom,$prenom,$date));
     // on renvoie les données du fichier photo comme feedback
     $photodata = file_get_contents($nomfichier);
     $data["base64"] = 'data:image/jpeg;base64,' . base64_encode($photodata);
