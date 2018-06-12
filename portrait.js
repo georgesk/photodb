@@ -1,5 +1,5 @@
 function onFailure(err) {
-    alert("Erreur : " + err.name);
+    alert("Erreur : " + err.name + ", " + err.message);
 }
 
 jQuery(document).ready(function () {
@@ -15,24 +15,15 @@ jQuery(document).ready(function () {
     var w=$("#webcam");
     $("#svgContainer").offset(w.offset());
 
-    navigator.getUserMedia = (navigator.getUserMedia ||
-                              navigator.webkitGetUserMedia ||
-                              navigator.mozGetUserMedia ||
-                              navigator.msGetUserMedia);
-    if (navigator.getUserMedia) {
-        navigator.getUserMedia
-        (
-            { video: {
-		width:320,
-		height:240,
-	    }},
-            function (localMediaStream) {
-                video.src = window.URL.createObjectURL(localMediaStream);
-            }, onFailure);
-    }
-    else {
-        onFailure();
-    }
+    var constraints={video: {width:320, height:240}};
+    navigator.mediaDevices.getUserMedia(constraints).then(
+        function (localMediaStream) {
+            video.srcObject = localMediaStream;
+	    video.onloadedmetadata = function(e) {video.play();};	 
+        }).catch(
+	    function(err) {
+		alert("Erreur : " + err.name + ", " + err.message);
+	    });
     button0.addEventListener('click',snapshot, false);
     $("#svgContainer").on("click",snapshot);
     button1.addEventListener('click',reset, false);
