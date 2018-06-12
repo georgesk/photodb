@@ -49,13 +49,15 @@ jQuery(document).ready(function () {
             $.getJSON("chercheNom.php", term, callback);
 	},
 	// effacer le prénom pendant qu'on bricole le nom !
+	// et aussi : remttre en saisie de vidéo
 	search: function( event, ui ) {$("#prenom").val("")},
-	change: function( event, ui ) {$("#prenom").val("")},
+	change: function( event, ui ) {$("#prenom").val(""); reset();},
     });
     $("#prenom").autocomplete({
 	source:    function(term, callback) {
             $.getJSON("cherchePrenom.php", {nom: $("#nom").val(), prenom: $("#prenom").val()}, callback);
 	},
+	change: function( event, ui ) {reset();},
     });
 });
 
