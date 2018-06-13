@@ -3,3 +3,4 @@ db
 external*
 photos
 debian
+__pycache__/

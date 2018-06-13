@@ -10,28 +10,37 @@ python3-opencv
 
 import cv2, sys, math, os, os.path
 import numpy as np
+from PIL import Image
+from io import BytesIO
+import base64
 
-thisdir=os.path.dirname(__file__)
-cascPath = os.path.join(thisdir,"haarcascade_frontalface_default.xml")
-CASCADE = cv2.CascadeClassifier(cascPath)
+__thisdir=os.path.dirname(__file__)
+__cascPath = os.path.join(__thisdir,"haarcascade_frontalface_default.xml")
+__CASCADE = cv2.CascadeClassifier(__cascPath)
 
-def cropImage(infile=sys.stdin, outfile=sys.stdout,
-              errfile=sys.stderr, size=(150,192)):
+def cropImage(indata, outdata,size=(150,192)):
     """
     Cherche un visage dans l'image de nom de fichier fname, située dans le
     répertoire indir; découpe l'image et la place dans le répertoire outdir
     si c'est possible. Émet un message de réussite ou d'erreur
-    @param infile un fichier ouvert avec l'image source
-    @param outfile un fichier ouvert pour l'image retouchée
-    @param errfile flux de sortie des messages d'erreur
+    @param indata un fichier de bytes ouvert avec l'image source
+    @param outdata un fichier de bytes ouvert pour l'image retouchée
     @param size la dimension de l'image retouchée (largeur, hauteur)
+    @return True quand un visage a été traité
     """
-    data=infile.read()
-    image = cv2.imdecode(np.frombuffer(data, np.uint8), cv2.IMREAD_COLOR)
+    jpgPrefix=b'data:image/jpeg;base64,'
+    val=indata.getvalue()
+    if val[:len(jpgPrefix)]==jpgPrefix:
+        val=val[len(jpgPrefix):]
+    #buf = np.frombuffer(indata.read(), np.uint8)
+    #image = cv2.imdecode(buf, cv2.IMREAD_COLOR)
+    image=np.array(Image.open(BytesIO(base64.b64decode(val))))
+    image=cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     height, width = image.shape[:2]
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    cv2.imwrite("essai.jpg", gray)
 
-    faces = CASCADE.detectMultiScale(
+    faces = __CASCADE.detectMultiScale(
         gray,
         scaleFactor=1.1,
         minNeighbors=5,
@@ -40,10 +49,10 @@ def cropImage(infile=sys.stdin, outfile=sys.stdout,
     )
 
     if len(faces)==0 or len(faces)>1:
+        result=False
         resized_image=image
-        errfile.write("ERREUR : visage mal reconnu.\n")
     else:
-        errfile.write("OK.\n")
+        result=True
         x, y, w, h = faces[0]
         # calcul du paramètre a tel que 25a * 32a ait la même surface que 2 * w * h
         a=math.sqrt(2*w*h/800)
@@ -65,8 +74,9 @@ def cropImage(infile=sys.stdin, outfile=sys.stdout,
         newimg=cv2.cvtColor(hsv1, cv2.COLOR_HSV2RGB)
         resized_image = cv2.resize(newimg, size) 
     data=cv2.imencode(".jpg",resized_image)[1].tostring()
-    outfile.write(data)
-    return
+    data=jpgPrefix+base64.b64encode(data)
+    outdata.write(data)
+    return result
 
 if __name__=="__main__":
     with open(sys.argv[1],"rb") as infile:
