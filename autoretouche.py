@@ -32,13 +32,10 @@ def cropImage(indata, outdata,size=(150,192)):
     val=indata.getvalue()
     if val[:len(jpgPrefix)]==jpgPrefix:
         val=val[len(jpgPrefix):]
-    #buf = np.frombuffer(indata.read(), np.uint8)
-    #image = cv2.imdecode(buf, cv2.IMREAD_COLOR)
     image=np.array(Image.open(BytesIO(base64.b64decode(val))))
     image=cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     height, width = image.shape[:2]
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    cv2.imwrite("essai.jpg", gray)
 
     faces = __CASCADE.detectMultiScale(
         gray,
