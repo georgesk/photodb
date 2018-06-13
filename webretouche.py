@@ -17,19 +17,18 @@ class Retouche(object):
     
     @cherrypy.expose
     def index(self):
-        return "Hello World! Here is the face normalizing service"
+        return open("test.html").read()
     
     @cherrypy.expose
-    @cherrypy.tools.json_in()
     @cherrypy.tools.json_out()
-    def retouche(self):
+    def retouche(self, data=None):
         jpgPrefix=b'data:image/jpeg;base64,'
-        try:
-            data = cherrypy.request.json
-        except:
+        if data is None:
             with open("nobody.jpg", "rb") as image_file:
                 encoded_string = base64.b64encode(image_file.read())
             data=jpgPrefix+encoded_string
+        else:
+            data=data.encode("utf-8") # to bytes
         imgdata=BytesIO()
         result= autoretouche.cropImage(BytesIO(data),imgdata)
         status = "OK" if result else "Face auto-detection failed"
@@ -39,15 +38,14 @@ class Retouche(object):
         }
 
     @cherrypy.expose
-    @cherrypy.tools.json_in()
-    def retoucheHTML(self):
+    def retoucheHTML(self, data=None):
         jpgPrefix=b'data:image/jpeg;base64,'
-        try:
-            data = cherrypy.request.json
-        except:
+        if data is None:
             with open("nobody.jpg", "rb") as image_file:
                 encoded_string = base64.b64encode(image_file.read())
             data=jpgPrefix+encoded_string
+        else:
+            data=data.encode("utf-8") # to bytes
         imgdata=BytesIO()
         result= autoretouche.cropImage(BytesIO(data),imgdata)
         status = "OK" if result else "Face auto-detection failed"
@@ -64,4 +62,4 @@ class Retouche(object):
 )
 
 if __name__=="__main__":
-    cherrypy.quickstart(Retouche())
+    cherrypy.quickstart(Retouche(),'/','cherryApp.conf')
