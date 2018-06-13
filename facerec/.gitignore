@@ -1,0 +1,6 @@
+photos_retouchees
+photos
+*.odt
+*~
+.~lock*
+__pycache__
