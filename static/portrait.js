@@ -2,16 +2,14 @@ function onFailure(err) {
     alert("Erreur : " + err.name + ", " + err.message);
 }
 
+var c = document.createElement("canvas"); // an invisible canvas for computations
+
+var video;
+
 jQuery(document).ready(function () {
     document.snapshot=false; // pas encore de photo au démarrage
-    var video = document.querySelector('#webcam');
-    var button0 = document.querySelector('#screenshot-button');
-    var button1 = document.querySelector('#reset-button');
-    var canvas = document.querySelector('#screenshot-canvas');
-    var ctxCanvas = canvas.getContext('2d');
+    video = document.querySelector('#webcam');
     var videoLive = $("#videoLive");
-    var shot = $("#shot");
-    shot.css({display: "none"});
     var w=$("#webcam");
     $("#svgContainer").offset(w.offset());
 
@@ -24,25 +22,8 @@ jQuery(document).ready(function () {
 	    function(err) {
 		alert("Erreur : " + err.name + ", " + err.message);
 	    });
-    button0.addEventListener('click',snapshot, false);
-    $("#svgContainer").on("click",snapshot);
-    button1.addEventListener('click',reset, false);
-    canvas.addEventListener('click',reset, false);
+    setTimeout(findFace,0);
     
-    function snapshot() {
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        ctxCanvas.drawImage(video, 75, 10, 170, 220, 0,0,320,240);
-	videoLive.css({display: "none",});
-	shot.css({display: "block"});
-	document.snapshot=true;
-    }
-
-    function reset(){
-	shot.css({display: "none"});
-	videoLive.css({display: "block",});
-    }
-
     $("#nom").autocomplete({
 	minLength: 3,
 	source:    function(term, callback) {
@@ -51,26 +32,50 @@ jQuery(document).ready(function () {
 	// effacer le prénom pendant qu'on bricole le nom !
 	// et aussi : remttre en saisie de vidéo
 	search: function( event, ui ) {$("#prenom").val("")},
-	change: function( event, ui ) {$("#prenom").val(""); reset();},
+	change: function( event, ui ) {$("#prenom").val("");},
     });
     $("#prenom").autocomplete({
 	source:    function(term, callback) {
             $.getJSON("/cherchePrenom", {nom: $("#nom").val(), prenom: $("#prenom").val()}, callback);
 	},
-	change: function( event, ui ) {reset();},
     });
 });
+
+/**
+ * tries to find faces twice a second
+ **/
+function findFace(){
+    c.width=video.videoWidth;
+    c.height = video.videoHeight;
+    var ctx=c.getContext('2d');
+    ctx.drawImage(video,0,0,320,240);
+    var photodata=c.toDataURL("image/jpeg");
+    $.post("/encadre",{
+	photo: photodata,
+    }).done(function(data){
+	var face=$($("#svgContainer")[0].children[0])
+	if (data.status){
+	    face.attr({
+		x: 320-data.rect.x-data.rect.w, // because of the symmetry
+		y: data.rect.y,
+		width: data.rect.w,
+		height: data.rect.h
+	    });
+	} else {
+	    face.attr({x: "-100", y: "-100", width: "0", height: "0"});
+	}
+    });
+    setTimeout(findFace,333);
+}
 
 function envoyer(){
     var nom=$("#nom").val();
     var prenom=$("#prenom").val();
-    var canvas=$("#screenshot-canvas").get(0);
-    var photodata=canvas.toDataURL("image/jpeg");
-    if (! document.snapshot){
-	// il n'y a pas de photo dans le canevas ? on sort !
-	alert("La photo n'est pas encore prise !");
-	return false;
-    }
+    c.width=video.videoWidth;
+    c.height = video.videoHeight;
+    var ctx=c.getContext('2d');
+    ctx.drawImage(video,0,0,320,240);
+    var photodata=c.toDataURL("image/jpeg");
     $.ajax("/envoi",{
 	type: "POST",
 	data:{
@@ -137,7 +142,8 @@ function envoyer(){
 		    ]
 		});
 	    } else if (data["statut"]=="malretouche"){ 
-			$("#dialog").html(
+		$("#dialog").html(
+		    "<img align='right' src='"+data["base64"]+"'/>" +
 		    "<p>Le système détecte mal le visage à recadrer.</p>" +
 			"<p>Veuillez refaire la photo.</p>"
 		);
@@ -195,8 +201,11 @@ function forcerEnvoi(){
     // fonction de rappel qui force l'envoi d'une photo après confirmation.
     var nom=$("#nom").val();
     var prenom=$("#prenom").val();
-    var canvas=$("#screenshot-canvas").get(0);
-    var photodata=canvas.toDataURL("image/jpeg");
+    c.width=video.videoWidth;
+    c.height = video.videoHeight;
+    var ctx=c.getContext('2d');
+    ctx.drawImage(video,0,0,320,240);
+    var photodata=c.toDataURL("image/jpeg");
     $.ajax("/force_envoi",{
 	type: "POST",
 	data:{
@@ -238,9 +247,12 @@ function nouvelEnvoi(){
     // données, donc on doit faire un INSERT, pas un UPDATE
     var nom=$("#nom").val();
     var prenom=$("#prenom").val();
-    var canvas=$("#screenshot-canvas").get(0);
-    var photodata=canvas.toDataURL("image/jpeg");
-    $.ajax("nouvel_envoi.php",{
+    c.width=video.videoWidth;
+    c.height = video.videoHeight;
+    var ctx=c.getContext('2d');
+    ctx.drawImage(video,0,0,320,240);
+    var photodata=c.toDataURL("image/jpeg");
+    $.ajax("/nouvel_envoi",{
 	type: "POST",
 	data:{
 	    prenom: prenom,

@@ -33,8 +33,9 @@ class FaceImage(object):
         """
         self.photo=None # should become a cv2 image
         self.size=size
-        self.cropped=None # should become a cv2 image
-        self.ok=False     # will become True when a face is detected
+        self.cropRect={}   # should become ("x":x, "y":y, "w":w, "h":h)
+        self.cropped=None  # should become a cv2 image
+        self.ok=False      # will become True when a face is detected
         if type(indata) == str and os.path.exists(indata):
             self.photo=cv2.imread(indata)
         elif type(indata) == bytes and indata[:len(jpgPrefix)] == jpgPrefix:
@@ -66,6 +67,9 @@ class FaceImage(object):
         else:
             self.ok=True
             x, y, w, h = faces[0]
+            # int() casts are necessary since cv2 uses int32 which
+            # is not JSON serializable to communicate with Javascript
+            self.cropRect = {"x": int(x), "y": int(y), "w": int(w), "h": int(h)}
             # calculate 'a' such as 25a * 32a equals the area 2 * w * h
             a=math.sqrt(2*w*h/800)
             # upper left coordinates

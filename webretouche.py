@@ -7,6 +7,7 @@ to normalize photos of faces
 
 import os, sys, cherrypy, sqlite3, re, uuid, base64
 from io import BytesIO
+from datetime import datetime
 
 thisdir=os.path.dirname(__file__)
 sys.path.insert(0, thisdir)
@@ -41,6 +42,12 @@ def staticFile(path):
     @return the content of a file in the static/ directory
     """
     return open(os.path.join(staticdir, path)).read()
+
+def timestamp():
+    """
+    @return a UTC time stamp
+    """
+    return datetime.utcnow().isoformat(sep=" ", timespec="seconds")
 
 class Retouche(object):
     
@@ -96,6 +103,7 @@ class Retouche(object):
         if not fi.ok: # first check whether a face has been detected
             return {
                 "statut": "malretouche", # bad face recognition
+                "base64": fi.toDataUrl,
             }
         conn=sqlite3.connect(db)
         c = conn.cursor()
@@ -113,7 +121,7 @@ class Retouche(object):
         else: # there is no photo so far
             fichier=nommage(kw['nom'],kw['prenom'])
             fi.saveAs(os.path.join(thisdir,'photos',fichier))
-            c.execute("UPDATE person SET photo='{fichier}' WHERE surname = '{nom}' and givenname = '{prenom}'".format(fichier=fichier,**kw))
+            c.execute("UPDATE person SET photo='{fichier}', date='{date}' WHERE surname = '{nom}' and givenname = '{prenom}'".format(fichier=fichier,date=timestamp(),**kw))
             conn.commit()
             return {
                 "statut": "ok",
@@ -136,6 +144,7 @@ class Retouche(object):
         if not fi.ok: # first check whether a face has been detected
             return {
                 "statut": "malretouche", # bad face recognition
+                "base64": fi.toDataUrl,
             }
         conn=sqlite3.connect(db)
         c = conn.cursor()
@@ -147,12 +156,55 @@ class Retouche(object):
                 pass
         fichier=nommage(kw['nom'],kw['prenom'])
         fi.saveAs(os.path.join(thisdir,'photos',fichier))
-        c.execute("UPDATE person SET photo='{fichier}' WHERE surname = '{nom}' and givenname = '{prenom}'".format(fichier=fichier,**kw))
+        c.execute("UPDATE person SET photo='{fichier}', date='{date}' WHERE surname = '{nom}' and givenname = '{prenom}'".format(fichier=fichier,date=timestamp(),**kw))
         conn.commit()
         return {
             "statut": "ok",
             "fichier": fichier,
             "base64": fi.toDataUrl,
+        }
+        
+    @cherrypy.expose
+    @cherrypy.tools.json_out()
+    def nouvel_envoi(self, **kw):
+        """
+        callback page to deal with first and second name, plus an image
+        when the names are not in the database
+        """
+        keys=('nom','prenom','photo')
+        for k in keys:
+            if k not in kw:
+                return {"statut": "ko"}
+        fi = FaceImage(kw['photo'].encode("utf-8"))
+        if not fi.ok: # first check whether a face has been detected
+            return {
+                "statut": "malretouche", # bad face recognition
+                "base64": fi.toDataUrl,
+            }
+        conn=sqlite3.connect(db)
+        c = conn.cursor()
+        fichier=nommage(kw['nom'],kw['prenom'])
+        fi.saveAs(os.path.join(thisdir,'photos',fichier))
+        c.execute("INSERT INTO person (surname, givenname, photo, date) VALUES ('{nom}','{prenom}','{fichier}','{date}')".format(fichier=fichier,date=timestamp(),**kw))
+        conn.commit()
+        return {
+            "statut": "ok",
+            "fichier": fichier,
+            "base64": fi.toDataUrl,
+        }
+        
+    @cherrypy.expose
+    @cherrypy.tools.json_out()
+    def encadre(self, **kw):
+        """
+        callback page to get the rectangle of a recognized face, if any
+        @param kw the keywords should at least contain the key "photo"
+        which yields a dataURL encoded JPG image
+        """
+        fi = FaceImage(kw['photo'].encode("utf-8"))
+        return {
+            "status": fi.ok,
+            "rect": fi.cropRect,
         }
         
     @cherrypy.expose

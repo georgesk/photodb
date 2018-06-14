@@ -10,33 +10,9 @@
     <link rel="stylesheet" href="/static/portrait.css" type="text/css"/>
 </head>
 <body>
-    <div>
-        <h3>Portrait</h3>
-	<div id="videoLive">
-          <p>
-	    <button id="screenshot-button">prendre la photo</button>
-	    Souriez, regardez la caméra !
-	  </p>
-	  <svg id="svgContainer">
-	    <rect id="mask-top" x="0" y="0" width="320" height="10"
-		  style="fill:white; fill-opacity:0.5;"/>
-	    <rect id="mask-bottom" x="0" y="230" width="320" height="10"
-		  style="fill:white; fill-opacity:0.5;"/>
-	    <rect id="mask-left" x="0" y="10" width="75" height="220"
-		  style="fill:white; fill-opacity:0.5;"/>
-	    <rect id="mask-right" x="245" y="10" width="75" height="220"
-		  style="fill:white; fill-opacity:0.5;"/>
-	    <rect id="frame" x="75" y="10" width="170" height="220"
-		  style="fill:white; fill-opacity:0;
-			 stroke:pink; stroke-width:5; stroke-opacity:0.5" />
-	  </svg>
-          <video id="webcam" autoplay ></video>
-	</div>
-	<div id="shot">
-          <p><button id="reset-button">Refaire la photo</button></p>
-          <canvas id="screenshot-canvas" width="170" height="220"> </canvas>
-	</div>
-	<form action="#" method="post" onsubmit="return envoyer();">
+    <div id="maincontent">
+	<form id="theform" action="#" method="post" onsubmit="return envoyer();">
+          <h3>Portrait</h3>
 	  <fieldset>
 	    <legend>Identité</legend>
 	    <table>
@@ -54,6 +30,25 @@
 	    </table>
 	  </fieldset>
 	</form>
+	<div id="videoLive">
+	  <svg id="svgContainer">
+	    <rect id="face" x="-100" y="-100" width="0" height="0"
+		  style="fill: white; fill-opacity: 0;
+			 stroke: blue; stroke-width: 2; stroke-opacity: 1"/>
+	    <rect id="mask-top" x="0" y="0" width="320" height="10"
+		  style="fill:white; fill-opacity:0.5;"/>
+	    <rect id="mask-bottom" x="0" y="230" width="320" height="10"
+		  style="fill:white; fill-opacity:0.5;"/>
+	    <rect id="mask-left" x="0" y="10" width="75" height="220"
+		  style="fill:white; fill-opacity:0.5;"/>
+	    <rect id="mask-right" x="245" y="10" width="75" height="220"
+		  style="fill:white; fill-opacity:0.5;"/>
+	    <rect id="frame" x="75" y="10" width="170" height="220"
+		  style="fill:white; fill-opacity:0;
+			 stroke:pink; stroke-width:5; stroke-opacity:0.5" />
+	  </svg>
+          <video id="webcam" autoplay ></video>
+	</div>
     </div>
     <div id="dialog"></div>
 </body>
