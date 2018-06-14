@@ -55,7 +55,7 @@ jQuery(document).ready(function () {
     });
     $("#prenom").autocomplete({
 	source:    function(term, callback) {
-            $.getJSON("cherchePrenom.php", {nom: $("#nom").val(), prenom: $("#prenom").val()}, callback);
+            $.getJSON("/cherchePrenom", {nom: $("#nom").val(), prenom: $("#prenom").val()}, callback);
 	},
 	change: function( event, ui ) {reset();},
     });

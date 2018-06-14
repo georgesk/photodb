@@ -48,6 +48,21 @@ class Retouche(object):
         
     @cherrypy.expose
     @cherrypy.tools.json_out()
+    def cherchePrenom(self, **kw):
+        """
+        search the database in order to make an autocompletion
+        on the Second Name field
+        """
+        if 'nom' not in kw or 'prenom' not in kw:
+            return []
+        result=[]
+        c = sqlite3.connect(db).cursor()
+        for row in c.execute("SELECT givenname FROM person WHERE surname = '{nom}' and givenname LIKE '{prenom}%'".format(**kw)):
+            result.append(row[0])
+        return result
+        
+    @cherrypy.expose
+    @cherrypy.tools.json_out()
     def retouche(self, data=None):
         """
         The web page /retouche can recieve data either by GET or POST
