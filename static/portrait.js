@@ -71,7 +71,7 @@ function envoyer(){
 	alert("La photo n'est pas encore prise !");
 	return false;
     }
-    $.ajax("envoi.php",{
+    $.ajax("/envoi",{
 	type: "POST",
 	data:{
 	    prenom: prenom,
@@ -133,6 +133,25 @@ function envoyer(){
 				$( this ).dialog( "close" );
 			    }
  			    //showText: false
+			},
+		    ]
+		});
+	    } else if (data["statut"]=="malretouche"){ 
+			$("#dialog").html(
+		    "<p>Le système détecte mal le visage à recadrer.</p>" +
+			"<p>Veuillez refaire la photo.</p>"
+		);
+		$("#dialog").dialog({
+		    width: 500,
+		    buttons: [
+			{
+			    text: "OK",
+			    icons: {
+				primary: "ui-icon-heart"
+			    },
+			    click: function() {
+				$( this ).dialog( "close" );
+			    }
 			},
 		    ]
 		});

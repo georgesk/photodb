@@ -5,13 +5,32 @@ A small web service based on cherrypy and opencv, which allow one
 to normalize photos of faces
 """
 
-import os, sys, cherrypy, sqlite3
+import os, sys, cherrypy, sqlite3, re, uuid
 from io import BytesIO
 
 thisdir=os.path.dirname(__file__)
 sys.path.insert(0, thisdir)
 staticdir=os.path.join(thisdir,"static")
 db=os.path.join(thisdir,'db','names.db')
+
+def protect(s):
+    """
+    prepare a name to be compatible with every file system
+    @ a string with no spaces, no diacritics, etc.
+    """
+    return re.sub(r'[^A-Za-z0-9_\-]','_',s)
+
+def nommage(nom, prenom):
+    """
+    return a unique file name based on two strings
+    @param nom surname
+    @param prenom given name
+    @return a unique filename
+    """
+    result=protect(nom)+'_'+protect(prenom)
+    result=result[:20]+'_'+str(uuid.uuid1())+'.jpg'
+    return result
+    
 
 def staticFile(path):
     """
@@ -60,6 +79,43 @@ class Retouche(object):
         for row in c.execute("SELECT givenname FROM person WHERE surname = '{nom}' and givenname LIKE '{prenom}%'".format(**kw)):
             result.append(row[0])
         return result
+        
+    @cherrypy.expose
+    @cherrypy.tools.json_out()
+    def envoi(self, **kw):
+        """
+        callback page to deal with first and second name, plus an image
+        """
+        keys=('nom','prenom','photo')
+        for k in keys:
+            if k not in kw:
+                return {"statut": "ko"}
+        c = sqlite3.connect(db).cursor()
+        rows=list(c.execute("SELECT photo FROM person where surname = '{nom}' and givenname = '{prenom}'".format(**kw)))
+        if not rows:
+            return {"statut": "nouveau"}
+        row=rows[0]
+        if row[0]: # there is a photo
+            path=os.path.join(thisdir, 'photos',row[0])
+            b64='data:image/jpeg;base64,'+base64.b64encode(open(path,'rb').read())
+            return {"statut": "dejavu","base64": b64,}
+        else: # there is no photo so far
+            imgResult=BytesIO()
+            result= autoretouche.cropImage(
+                BytesIO(kw['photo'].encode("utf-8")),
+                imgResult
+            )
+            if not result:
+                return {
+                    "statut": "malretouche", # bad face recognition
+                    "fichier": nommage(kw['nom'],kw['prenom']),
+                    "base64": imgResult.getvalue(),
+                }
+            return {
+                "statut": "ok",
+                "fichier": nommage(kw['nom'],kw['prenom']),
+                "base64": imgResult.getvalue(),
+            }
         
     @cherrypy.expose
     @cherrypy.tools.json_out()
