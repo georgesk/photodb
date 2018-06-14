@@ -4,15 +4,23 @@ function onFailure(err) {
 
 var c = document.createElement("canvas"); // an invisible canvas for computations
 
+var message;
+var otherimage;
 var video;
+var face;
 
 jQuery(document).ready(function () {
-    document.snapshot=false; // pas encore de photo au démarrage
+    // init global variables
+    message=$("#message");
+    otherimage=$("#otherimage");
     video = document.querySelector('#webcam');
-    var videoLive = $("#videoLive");
+    face=$($("#svgContainer")[0].children[0])
+    
+    // make overlaied objects
     var w=$("#webcam");
     $("#svgContainer").offset(w.offset());
 
+    // start the video
     var constraints={video: {width:320, height:240}};
     navigator.mediaDevices.getUserMedia(constraints).then(
         function (localMediaStream) {
@@ -22,6 +30,8 @@ jQuery(document).ready(function () {
 	    function(err) {
 		alert("Erreur : " + err.name + ", " + err.message);
 	    });
+
+    // start the fast interactive loop
     setTimeout(findFace,0);
     
     $("#nom").autocomplete({
@@ -52,8 +62,9 @@ function findFace(){
     var photodata=c.toDataURL("image/jpeg");
     $.post("/encadre",{
 	photo: photodata,
+	nom: $("#nom").val(),
+	prenom: $("#prenom").val(),
     }).done(function(data){
-	var face=$($("#svgContainer")[0].children[0])
 	if (data.status){
 	    face.attr({
 		x: 320-data.rect.x-data.rect.w, // because of the symmetry
@@ -63,6 +74,19 @@ function findFace(){
 	    });
 	} else {
 	    face.attr({x: "-100", y: "-100", width: "0", height: "0"});
+	}
+	console.log(data.message, data.oldimage.length > 0);
+	if (data.message){
+	    message.text(data.message);
+	    message.show();
+	} else {
+	    message.hide();
+	}
+	if (data.oldimage){
+	    otherimage.attr({src: data.oldimage});
+	    otherimage.show();
+	} else {
+	    otherimage.hide();
 	}
     });
     setTimeout(findFace,333);

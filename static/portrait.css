@@ -28,8 +28,23 @@
 
 #theform {
     float: right;
+    width:350px;
 }
 
 #theform h1,h2,h3 {
     text-align: center;
 }
+
+#otherimage {
+    height: 2em;
+    vertical-align: middle;
+    padding: 0 1em;
+}
+
+#message {
+    background: orange;
+    color: white;
+    padding: 0 0.5em;
+    border-radius: 0.5em;
+}
+

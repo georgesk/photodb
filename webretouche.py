@@ -212,10 +212,10 @@ class Retouche(object):
             message="Trouvé(e) dans la base"
             photo=rows[0][0]
             if photo:
-                photo=open(os.path.join(thisdir,"photos",photo).read)
+                photo=open(os.path.join(thisdir,"photos",photo),'rb').read()
                 photo=jpgPrefix+base64.b64encode(photo)
                 oldimage=photo
-                message="Trouvé(e) dans la base avec la photo"
+                message="Trouvé(e) avec la photo"
         return {
             "status": fi.ok,
             "rect": fi.cropRect,
