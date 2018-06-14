@@ -198,13 +198,29 @@ class Retouche(object):
     def encadre(self, **kw):
         """
         callback page to get the rectangle of a recognized face, if any
-        @param kw the keywords should at least contain the key "photo"
+        @param kw the keywords with keys "photo", "nom", "prenom"
         which yields a dataURL encoded JPG image
         """
         fi = FaceImage(kw['photo'].encode("utf-8"))
+        c = sqlite3.connect(db).cursor()
+        rows=list(c.execute("SELECT photo FROM person where surname = '{nom}' and givenname = '{prenom}'".format(**kw)))
+        message=""
+        oldimage=""
+        if not rows:
+            message="Inconnu(e) dans la base"
+        else:
+            message="Trouvé(e) dans la base"
+            photo=rows[0][0]
+            if photo:
+                photo=open(os.path.join(thisdir,"photos",photo).read)
+                photo=jpgPrefix+base64.b64encode(photo)
+                oldimage=photo
+                message="Trouvé(e) dans la base avec la photo"
         return {
             "status": fi.ok,
             "rect": fi.cropRect,
+            "message": message,
+            "oldimage": oldimage,
         }
         
     @cherrypy.expose
@@ -230,5 +246,6 @@ class Retouche(object):
             "imgdata": fi.toDataUrl,
         }
 
+        
 if __name__=="__main__":
     cherrypy.quickstart(Retouche(),'/','cherryApp.conf')
