@@ -138,12 +138,11 @@ class Retouche(object):
             data=jpgPrefix+encoded_string
         else:
             data=data.encode("utf-8") # to bytes
-        imgdata=BytesIO()
-        result= autoretouche.cropImage(BytesIO(data),imgdata)
-        status = "OK" if result else "Face auto-detection failed"
+        fi = FaceImage(data)
+        status = "OK" if fi.ok else "Face auto-detection failed"
         return {
             "status": status,
-            "imgdata": imgdata.getvalue(),
+            "imgdata": fi.toDataUrl,
         }
 
 if __name__=="__main__":
