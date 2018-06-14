@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="content-type" content="text/html;charset=utf-8" />
+    <title>Saisie de portrait</title>
+    <script src="/static/jquery.js" type="text/javascript"></script>
+    <link rel="stylesheet" href="/static/jquery-ui-themes/smoothness/jquery-ui.css"/>
+    <script src="/static/jquery-ui/jquery-ui.js" type="text/javascript"></script>
+      <script type="text/javascript" src="/static/portrait.js"></script>
+    <link rel="stylesheet" href="/static/portrait.css" type="text/css"/>
+</head>
+<body>
+    <div>
+        <h3>Portrait</h3>
+	<div id="videoLive">
+          <p>
+	    <button id="screenshot-button">prendre la photo</button>
+	    Souriez, regardez la caméra !
+	  </p>
+	  <svg id="svgContainer">
+	    <rect id="mask-top" x="0" y="0" width="320" height="10"
+		  style="fill:white; fill-opacity:0.5;"/>
+	    <rect id="mask-bottom" x="0" y="230" width="320" height="10"
+		  style="fill:white; fill-opacity:0.5;"/>
+	    <rect id="mask-left" x="0" y="10" width="75" height="220"
+		  style="fill:white; fill-opacity:0.5;"/>
+	    <rect id="mask-right" x="245" y="10" width="75" height="220"
+		  style="fill:white; fill-opacity:0.5;"/>
+	    <rect id="frame" x="75" y="10" width="170" height="220"
+		  style="fill:white; fill-opacity:0;
+			 stroke:pink; stroke-width:5; stroke-opacity:0.5" />
+	  </svg>
+          <video id="webcam" autoplay ></video>
+	</div>
+	<div id="shot">
+          <p><button id="reset-button">Refaire la photo</button></p>
+          <canvas id="screenshot-canvas" width="170" height="220"> </canvas>
+	</div>
+	<form action="#" method="post" onsubmit="return envoyer();">
+	  <fieldset>
+	    <legend>Identité</legend>
+	    <table>
+	      <tr>
+		<th>Nom :</th>
+		<td><input type="text" name="nom" id="nom"/></td>
+	      </tr>
+	      <tr>
+		<th>Prénom :</th>
+		<td><input type="text" name="prenom" id="prenom"/></td>
+	      </tr>
+	      <tr>
+		<td colspan="2"><input type="submit" value="Enregistrer" /></td>
+	      </tr>
+	    </table>
+	  </fieldset>
+	</form>
+    </div>
+    <div id="dialog"></div>
+</body>
+</html>
+<!--
+    Local Variables:
+    mode: nxml
+    End:
+-->

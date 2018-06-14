@@ -5,11 +5,19 @@ A small web service based on cherrypy and opencv, which allow one
 to normalize photos of faces
 """
 
-import os, sys, cherrypy
+import os, sys, cherrypy, sqlite3
 from io import BytesIO
 
 thisdir=os.path.dirname(__file__)
 sys.path.insert(0, thisdir)
+staticdir=os.path.join(thisdir,"static")
+db=os.path.join(thisdir,'db','names.db')
+
+def staticFile(path):
+    """
+    @return the content of a file in the static/ directory
+    """
+    return open(os.path.join(staticdir, path)).read()
 
 import autoretouche, base64
 
@@ -17,12 +25,27 @@ class Retouche(object):
     
     @cherrypy.expose
     def index(self):
-        return "Hello World! Here is the face normalizing service"
+        return staticFile("portrait.html")
     
     @cherrypy.expose
     def test(self):
-        return open("static/test.html").read()
-    
+        return staticFile("test.html")
+
+    @cherrypy.expose
+    @cherrypy.tools.json_out()
+    def chercheNom(self, term=None):
+        """
+        search the database in order to make an autocompletion
+        on the First Name field
+        """
+        if term is None:
+            return []
+        result=[]
+        c = sqlite3.connect(db).cursor()
+        for row in c.execute("SELECT surname FROM person where surname like '%{}%'".format(term)):
+            result.append(row[0])
+        return result
+        
     @cherrypy.expose
     @cherrypy.tools.json_out()
     def retouche(self, data=None):
