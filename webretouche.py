@@ -5,7 +5,7 @@ A small web service based on cherrypy and opencv, which allow one
 to normalize photos of faces
 """
 
-import os, sys, cherrypy, sqlite3, re, uuid
+import os, sys, cherrypy, sqlite3, re, uuid, base64
 from io import BytesIO
 
 thisdir=os.path.dirname(__file__)
@@ -13,6 +13,9 @@ sys.path.insert(0, thisdir)
 staticdir=os.path.join(thisdir,"static")
 db=os.path.join(thisdir,'db','names.db')
 jpgPrefix=b'data:image/jpeg;base64,'
+
+from autoretouche import jpgPrefix, FaceImage
+
 
 def protect(s):
     """
@@ -38,8 +41,6 @@ def staticFile(path):
     @return the content of a file in the static/ directory
     """
     return open(os.path.join(staticdir, path)).read()
-
-import autoretouche, base64
 
 class Retouche(object):
     
@@ -103,22 +104,17 @@ class Retouche(object):
             return {"statut": "dejavu","base64": b64,}
         else: # there is no photo so far
             imgResult=BytesIO()
-            result= autoretouche.cropImage(
-                BytesIO(kw['photo'].encode("utf-8")),
-                imgResult
-            )
-            if not result:
+            fi = FaceImage(kw['photo'].encode("utf-8"))
+            if not fi.ok:
                 return {
                     "statut": "malretouche", # bad face recognition
                     "fichier": nommage(kw['nom'],kw['prenom']),
                     "base64": imgResult.getvalue(),
                 }
             fichier=nommage(kw['nom'],kw['prenom'])
-            with open(os.path.join(thisdir,'photos',fichier),'wb') as photoFile:
-                data=imgResult.getvalue()[len(jpgPrefix):]
-                photoFile.write(base64.b64decode(data))
-                c.execute("UPDATE person SET photo='{fichier}' WHERE surname = '{nom}' and givenname = '{prenom}'".format(fichier=fichier,**kw))
-                conn.commit()
+            fi.saveAs(os.path.join(thisdir,'photos',fichier))
+            c.execute("UPDATE person SET photo='{fichier}' WHERE surname = '{nom}' and givenname = '{prenom}'".format(fichier=fichier,**kw))
+            conn.commit()
             return {
                 "statut": "ok",
                 "fichier": fichier,
