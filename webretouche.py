@@ -92,6 +92,11 @@ class Retouche(object):
         for k in keys:
             if k not in kw:
                 return {"statut": "ko"}
+        fi = FaceImage(kw['photo'].encode("utf-8"))
+        if not fi.ok: # first check whether a face has been detected
+            return {
+                "statut": "malretouche", # bad face recognition
+            }
         conn=sqlite3.connect(db)
         c = conn.cursor()
         rows=list(c.execute("SELECT photo FROM person where surname = '{nom}' and givenname = '{prenom}'".format(**kw)))
@@ -100,17 +105,12 @@ class Retouche(object):
         row=rows[0]
         if row[0]: # there is a photo
             path=os.path.join(thisdir, 'photos',row[0])
-            b64=jpgPrefix+base64.b64encode(open(path,'rb').read())
+            try:
+                b64=jpgPrefix+base64.b64encode(open(path,'rb').read())
+            except:
+                b64=jpgPrefix+base64.b64encode(open(os.path.join(thisdir,"nobody.jpg"),'rb').read())
             return {"statut": "dejavu","base64": b64,}
         else: # there is no photo so far
-            imgResult=BytesIO()
-            fi = FaceImage(kw['photo'].encode("utf-8"))
-            if not fi.ok:
-                return {
-                    "statut": "malretouche", # bad face recognition
-                    "fichier": nommage(kw['nom'],kw['prenom']),
-                    "base64": imgResult.getvalue(),
-                }
             fichier=nommage(kw['nom'],kw['prenom'])
             fi.saveAs(os.path.join(thisdir,'photos',fichier))
             c.execute("UPDATE person SET photo='{fichier}' WHERE surname = '{nom}' and givenname = '{prenom}'".format(fichier=fichier,**kw))
@@ -118,14 +118,47 @@ class Retouche(object):
             return {
                 "statut": "ok",
                 "fichier": fichier,
-                "base64": imgResult.getvalue(),
+                "base64": fi.toDataUrl,
             }
+        
+    @cherrypy.expose
+    @cherrypy.tools.json_out()
+    def force_envoi(self, **kw):
+        """
+        callback page to deal with first and second name, plus an image
+        when the image must be overwritten
+        """
+        keys=('nom','prenom','photo')
+        for k in keys:
+            if k not in kw:
+                return {"statut": "ko"}
+        fi = FaceImage(kw['photo'].encode("utf-8"))
+        if not fi.ok: # first check whether a face has been detected
+            return {
+                "statut": "malretouche", # bad face recognition
+            }
+        conn=sqlite3.connect(db)
+        c = conn.cursor()
+        c.execute("SELECT photo FROM person where surname = '{nom}' and givenname = '{prenom}'".format(**kw))
+        for row in c: # erase the previous photo
+            try:
+                os.unlink(os.path.join(thisdir,"photos",row[0]))
+            except:
+                pass
+        fichier=nommage(kw['nom'],kw['prenom'])
+        fi.saveAs(os.path.join(thisdir,'photos',fichier))
+        c.execute("UPDATE person SET photo='{fichier}' WHERE surname = '{nom}' and givenname = '{prenom}'".format(fichier=fichier,**kw))
+        conn.commit()
+        return {
+            "statut": "ok",
+            "fichier": fichier,
+            "base64": fi.toDataUrl,
+        }
         
     @cherrypy.expose
     @cherrypy.tools.json_out()
     def retouche(self, data=None):
         """
-        The web page /retouche can recieve data either by GET or POST
         @param data should be an url-encoded JPG image
         (magic bytes: 'data:image/jpeg;base64,')
         @return a JSON response, with status => "OK" when a face was recognized

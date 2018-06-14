@@ -35,7 +35,6 @@ class FaceImage(object):
         self.size=size
         self.cropped=None # should become a cv2 image
         self.ok=False     # will become True when a face is detected
-        print("GRRR", type(indata), os.path.exists(indata))
         if type(indata) == str and os.path.exists(indata):
             self.photo=cv2.imread(indata)
         elif type(indata) == bytes and indata[:len(jpgPrefix)] == jpgPrefix:
