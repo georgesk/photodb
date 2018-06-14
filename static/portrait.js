@@ -197,7 +197,7 @@ function forcerEnvoi(){
     var prenom=$("#prenom").val();
     var canvas=$("#screenshot-canvas").get(0);
     var photodata=canvas.toDataURL("image/jpeg");
-    $.ajax("force_envoi.php",{
+    $.ajax("/force_envoi",{
 	type: "POST",
 	data:{
 	    prenom: prenom,
