@@ -12,6 +12,7 @@ thisdir=os.path.dirname(__file__)
 sys.path.insert(0, thisdir)
 staticdir=os.path.join(thisdir,"static")
 db=os.path.join(thisdir,'db','names.db')
+jpgPrefix=b'data:image/jpeg;base64,'
 
 def protect(s):
     """
@@ -90,14 +91,15 @@ class Retouche(object):
         for k in keys:
             if k not in kw:
                 return {"statut": "ko"}
-        c = sqlite3.connect(db).cursor()
+        conn=sqlite3.connect(db)
+        c = conn.cursor()
         rows=list(c.execute("SELECT photo FROM person where surname = '{nom}' and givenname = '{prenom}'".format(**kw)))
         if not rows:
             return {"statut": "nouveau"}
         row=rows[0]
         if row[0]: # there is a photo
             path=os.path.join(thisdir, 'photos',row[0])
-            b64='data:image/jpeg;base64,'+base64.b64encode(open(path,'rb').read())
+            b64=jpgPrefix+base64.b64encode(open(path,'rb').read())
             return {"statut": "dejavu","base64": b64,}
         else: # there is no photo so far
             imgResult=BytesIO()
@@ -111,9 +113,15 @@ class Retouche(object):
                     "fichier": nommage(kw['nom'],kw['prenom']),
                     "base64": imgResult.getvalue(),
                 }
+            fichier=nommage(kw['nom'],kw['prenom'])
+            with open(os.path.join(thisdir,'photos',fichier),'wb') as photoFile:
+                data=imgResult.getvalue()[len(jpgPrefix):]
+                photoFile.write(base64.b64decode(data))
+                c.execute("UPDATE person SET photo='{fichier}' WHERE surname = '{nom}' and givenname = '{prenom}'".format(fichier=fichier,**kw))
+                conn.commit()
             return {
                 "statut": "ok",
-                "fichier": nommage(kw['nom'],kw['prenom']),
+                "fichier": fichier,
                 "base64": imgResult.getvalue(),
             }
         
@@ -128,7 +136,6 @@ class Retouche(object):
         then imgdata => an url-encoded JPG image. If the status is something
         else, an anonymous image is loaded in imgdata.
         """
-        jpgPrefix=b'data:image/jpeg;base64,'
         if data is None:
             with open("nobody.jpg", "rb") as image_file:
                 encoded_string = base64.b64encode(image_file.read())
