@@ -75,9 +75,9 @@ function findFace(){
 	} else {
 	    face.attr({x: "-100", y: "-100", width: "0", height: "0"});
 	}
-	console.log(data.message, data.oldimage.length > 0);
 	if (data.message){
 	    message.text(data.message);
+	    message.attr("class",data.cssclass)
 	    message.show();
 	} else {
 	    message.hide();
@@ -109,205 +109,25 @@ function envoyer(){
 	},
     }).done(
 	function(data){
-	    if (data["statut"]=="dejavu"){
-		// il y a déjà une photo!
-		$("#dialog").html(
-		    "<img style='float:right' alt='image'/>" +
-			"<p>Il y a déjà une photo enregistrée pour " +
-			nom + " " + prenom +
-			"\nVoulez-vous la remplacer ?</p>"
-		);
-		$("#dialog img").attr("src", data["base64"]);
-		$("#dialog").dialog({
-		    width: 500,
-		    buttons: [
-			{
-			    text: "Ok",
-			    icons: {
-				primary: "ui-icon-heart"
-			    },
-			    click: function() {
-				$( this ).dialog( "close" );
-				forcerEnvoi();
-			    }
- 			    //showText: false
-			},
-			{
-			    text: "Échappement",
-			    click: function() {
-				$( this ).dialog( "close" );
-			    }
- 			    //showText: false
-			},
-		    ]
-		});
-	    } else if (data["statut"]=="ok"){ 
-		// c'est une nouvelle photo
-		$("#dialog").html(
-		    "<img style='float:right' alt='image'/>" +
-			"<p>Photo enregistrée pour " +
-			nom + " " + prenom +
-			" avec succès</p>"
-		);
-		$("#dialog img").attr("src", data["base64"]);		
-		$("#dialog").dialog({
-		    width: 500,
-		    buttons: [
-			{
-			    text: "Vu",
-			    icons: {
-				primary: "ui-icon-heart"
-			    },
-			    click: function() {
-				$( this ).dialog( "close" );
-			    }
- 			    //showText: false
-			},
-		    ]
-		});
-	    } else if (data["statut"]=="malretouche"){ 
-		$("#dialog").html(
-		    "<img align='right' src='"+data["base64"]+"'/>" +
-		    "<p>Le système détecte mal le visage à recadrer.</p>" +
-			"<p>Veuillez refaire la photo.</p>"
-		);
-		$("#dialog").dialog({
-		    width: 500,
-		    buttons: [
-			{
-			    text: "OK",
-			    icons: {
-				primary: "ui-icon-heart"
-			    },
-			    click: function() {
-				$( this ).dialog( "close" );
-			    }
-			},
-		    ]
-		});
-	    } else { // dernière possibilité : data["statut"]=="nouveau"
-		$("#dialog").html(
-		    "<p>On ne trouve pas " +
-			nom + " " + prenom +
-			" dans la base de données actuelle</p>" +
-			"<p>Voulez-vous créer cet enregistrement ?</p>"
-		);
-		$("#dialog").dialog({
-		    width: 500,
-		    buttons: [
-			{
-			    text: "OK",
-			    icons: {
-				primary: "ui-icon-heart"
-			    },
-			    click: function() {
-				$( this ).dialog( "close" );
-				nouvelEnvoi();
-			    }
- 			    //showText: false
-			},
-			{
-			    text: "Échappement",
-			    click: function() {
-				$( this ).dialog( "close" );
-			    }
- 			    //showText: false
-			},
-		    ]
-		});
-	    }
-	}
-    )
-    return false;
-}
-
-function forcerEnvoi(){
-    // fonction de rappel qui force l'envoi d'une photo après confirmation.
-    var nom=$("#nom").val();
-    var prenom=$("#prenom").val();
-    c.width=video.videoWidth;
-    c.height = video.videoHeight;
-    var ctx=c.getContext('2d');
-    ctx.drawImage(video,0,0,320,240);
-    var photodata=c.toDataURL("image/jpeg");
-    $.ajax("/force_envoi",{
-	type: "POST",
-	data:{
-	    prenom: prenom,
-	    nom: nom,
-	    photo: photodata,
-	},
-    }).done(
-	function(data){
 	    $("#dialog").html(
-		"<img style='float:right' alt='image'/>" +
-		    "<p>Photo enregistrée pour " +
-		    nom + " " + prenom +
-		    " avec succès</p>"
+		"<img align='right' src='"+data["base64"]+"'/>" +
+		    data.message
 	    );
-	    $("#dialog img").attr("src", data["base64"]);		
 	    $("#dialog").dialog({
 		width: 500,
 		buttons: [
 		    {
-			text: "Vu",
+			text: "OK",
 			icons: {
 			    primary: "ui-icon-heart"
 			},
 			click: function() {
 			    $( this ).dialog( "close" );
 			}
- 			//showText: false
 		    },
 		]
 	    });
 	}
     )
-    return false;
-}
-
-function nouvelEnvoi(){
-    // on envoie la photo d'une personne encore inconnue de la base de
-    // données, donc on doit faire un INSERT, pas un UPDATE
-    var nom=$("#nom").val();
-    var prenom=$("#prenom").val();
-    c.width=video.videoWidth;
-    c.height = video.videoHeight;
-    var ctx=c.getContext('2d');
-    ctx.drawImage(video,0,0,320,240);
-    var photodata=c.toDataURL("image/jpeg");
-    $.ajax("/nouvel_envoi",{
-	type: "POST",
-	data:{
-	    prenom: prenom,
-	    nom: nom,
-	    photo: photodata,
-	},
-    }).done(
-	function(data){
-	    $("#dialog").html(
-		"<img style='float:right' alt='image'/>" +
-		    "<p>Photo enregistrée pour " +
-		    nom + " " + prenom +
-		    " avec succès</p>"
-	    );
-	    $("#dialog img").attr("src", data["base64"]);		
-	    $("#dialog").dialog({
-		width: 500,
-		buttons: [
-		    {
-			text: "Vu",
-			icons: {
-			    primary: "ui-icon-heart"
-			},
-			click: function() {
-			    $( this ).dialog( "close" );
-			}
- 			//showText: false
-		    },
-		]
-	    });
-	}
-    )
-    return false;
+    return false; // never complete the submit action
 }

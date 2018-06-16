@@ -94,103 +94,76 @@ class Retouche(object):
     def envoi(self, **kw):
         """
         callback page to deal with first and second name, plus an image
+        @param kw dictionary of named parameters, with mandatory keys:
+        nom, prenom, photo
+        @return dictionary with those keys: status and message; when
+        status is not "ko", two other keys are given: fname and base64
         """
         keys=('nom','prenom','photo')
-        for k in keys:
-            if k not in kw:
-                return {"statut": "ko"}
+        # give an error message when one parameter is missing or empty
+        missingKeys=[k for k in keys if k not in kw]
+        missingVals=[k for k in kw if not kw[k]]
+        if missingKeys + missingVals:
+            return {
+                "status": "ko",
+                "message": "appel erroné, paramètres incorrects: {l}".format(l=",".join(missingKeys + missingVals)),
+            }
         fi = FaceImage(kw['photo'].encode("utf-8"))
-        if not fi.ok: # first check whether a face has been detected
-            return {
-                "statut": "malretouche", # bad face recognition
-                "base64": fi.toDataUrl,
-            }
-        conn=sqlite3.connect(db)
-        c = conn.cursor()
-        rows=list(c.execute("SELECT photo FROM person where surname = '{nom}' and givenname = '{prenom}'".format(**kw)))
-        if not rows:
-            return {"statut": "nouveau"}
-        row=rows[0]
-        if row[0]: # there is a photo
-            path=os.path.join(thisdir, 'photos',row[0])
-            try:
-                b64=jpgPrefix+base64.b64encode(open(path,'rb').read())
-            except:
-                b64=jpgPrefix+base64.b64encode(open(os.path.join(thisdir,"nobody.jpg"),'rb').read())
-            return {"statut": "dejavu","base64": b64,}
-        else: # there is no photo so far
-            fichier=nommage(kw['nom'],kw['prenom'])
-            fi.saveAs(os.path.join(thisdir,'photos',fichier))
-            c.execute("UPDATE person SET photo='{fichier}', date='{date}' WHERE surname = '{nom}' and givenname = '{prenom}'".format(fichier=fichier,date=timestamp(),**kw))
-            conn.commit()
-            return {
-                "statut": "ok",
-                "fichier": fichier,
-                "base64": fi.toDataUrl,
-            }
-        
-    @cherrypy.expose
-    @cherrypy.tools.json_out()
-    def force_envoi(self, **kw):
-        """
-        callback page to deal with first and second name, plus an image
-        when the image must be overwritten
-        """
-        keys=('nom','prenom','photo')
-        for k in keys:
-            if k not in kw:
-                return {"statut": "ko"}
-        fi = FaceImage(kw['photo'].encode("utf-8"))
-        if not fi.ok: # first check whether a face has been detected
-            return {
-                "statut": "malretouche", # bad face recognition
-                "base64": fi.toDataUrl,
-            }
-        conn=sqlite3.connect(db)
-        c = conn.cursor()
-        c.execute("SELECT photo FROM person where surname = '{nom}' and givenname = '{prenom}'".format(**kw))
-        for row in c: # erase the previous photo
-            try:
-                os.unlink(os.path.join(thisdir,"photos",row[0]))
-            except:
-                pass
-        fichier=nommage(kw['nom'],kw['prenom'])
-        fi.saveAs(os.path.join(thisdir,'photos',fichier))
-        c.execute("UPDATE person SET photo='{fichier}', date='{date}' WHERE surname = '{nom}' and givenname = '{prenom}'".format(fichier=fichier,date=timestamp(),**kw))
-        conn.commit()
+        #### default return components, when no face is detected ####
+        status="malretouche"
+        fname=""
+        base64=fi.toDataUrl
+        message="""<p>Le système détecte mal le visage à recadrer.</p>
+<p>Veuillez refaire la photo.</p>
+"""
+        if fi.ok:
+            # a face was detected, good!
+            fname=nommage(kw['nom'],kw['prenom'])
+            fi.saveAs(os.path.join(thisdir,'photos',fname))
+            conn=sqlite3.connect(db)
+            c = conn.cursor()
+            rows=list(c.execute("""
+SELECT photo FROM person
+WHERE surname = '{nom}' and givenname = '{prenom}'
+""".format(**kw)))
+            if not rows:
+                # the user does not exist so far: create a new entry
+                status="nouveau"
+                message="""
+<p>Nouvel enregistrement créé pour {nom} {prenom}</p>
+""".format(**kw)
+                c.execute("""
+INSERT INTO person (surname, givenname, photo, date) 
+VALUES ('{nom}','{prenom}','{fname}','{date}')
+""".format(fname=fname,date=timestamp(),**kw))
+                conn.commit()
+            else:
+                photo=rows[0][0]
+                # the user already exists, make an update
+                status="ok"
+                message="""
+<p>Enregistrement de la photo effectué pour {nom} {prenom}</p>
+""".format(**kw)
+                if photo: # erase an earlier photo file
+                    moremessage="<p>L'ancienne photo n'existait pas : erreur ?</p>"
+                    try:
+                        os.unlink(os.path.join(thisdir,'photos',photo))
+                        moremessage="<p>L'ancienne photo a été effacée</p>"
+                    except:
+                        pass
+                    message+=moremessage
+                # the update is made in either case, even if there was no photo
+                c.execute("""
+UPDATE person SET photo='{fname}', date='{date}'
+WHERE surname = '{nom}' and givenname = '{prenom}'
+""".format(fname=fname,date=timestamp(),**kw))
+                conn.commit()
+        # in any case, return status, fname, base64 message
         return {
             "statut": "ok",
-            "fichier": fichier,
+            "fname": fname,
             "base64": fi.toDataUrl,
-        }
-        
-    @cherrypy.expose
-    @cherrypy.tools.json_out()
-    def nouvel_envoi(self, **kw):
-        """
-        callback page to deal with first and second name, plus an image
-        when the names are not in the database
-        """
-        keys=('nom','prenom','photo')
-        for k in keys:
-            if k not in kw:
-                return {"statut": "ko"}
-        fi = FaceImage(kw['photo'].encode("utf-8"))
-        if not fi.ok: # first check whether a face has been detected
-            return {
-                "statut": "malretouche", # bad face recognition
-                "base64": fi.toDataUrl,
-            }
-        conn=sqlite3.connect(db)
-        c = conn.cursor()
-        fichier=nommage(kw['nom'],kw['prenom'])
-        fi.saveAs(os.path.join(thisdir,'photos',fichier))
-        c.execute("INSERT INTO person (surname, givenname, photo, date) VALUES ('{nom}','{prenom}','{fichier}','{date}')".format(fichier=fichier,date=timestamp(),**kw))
-        conn.commit()
-        return {
-            "statut": "ok",
-            "fichier": fichier,
-            "base64": fi.toDataUrl,
+            "message": message,
         }
         
     @cherrypy.expose
@@ -208,19 +181,23 @@ class Retouche(object):
         oldimage=""
         if not rows:
             message="Inconnu(e) dans la base"
+            cssclass="red"
         else:
             message="Trouvé(e) dans la base"
+            cssclass="green"
             photo=rows[0][0]
             if photo:
                 photo=open(os.path.join(thisdir,"photos",photo),'rb').read()
                 photo=jpgPrefix+base64.b64encode(photo)
                 oldimage=photo
                 message="Trouvé(e) avec la photo"
+                cssclass="orange"
         return {
             "status": fi.ok,
             "rect": fi.cropRect,
             "message": message,
             "oldimage": oldimage,
+            "cssclass": cssclass,
         }
         
     @cherrypy.expose
