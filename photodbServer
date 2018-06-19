@@ -1,5 +1,9 @@
 #!/bin/sh
 
-sudo su www-data
-cd /var/lib/photodb
-exec python3 webretouche.py
+user=$(id -un)
+if [ "$user" = "www-data" ]; then
+    cd /var/lib/photodb
+    exec python3 webretouche.py
+else
+    sudo su www-data --shell /bin/sh --command "$0"
+fi
