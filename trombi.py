@@ -9,7 +9,17 @@ from io import BytesIO, StringIO
 import zipfile
 import xml.dom.minidom
 import os
+import hashlib
 
+def hashImageFileName(f):
+    """
+    prend un nom de fichier qui se termine par .jpg et renvoie un nom de fichier
+    que LibreOffice peut prendre comme fichier d'image
+    """
+    root, ext = os.path.splitext(f)
+    root=root.encode("utf-8")
+    return "Pictures/000000000000096000000"+hashlib.md5(root).hexdigest()[:18].upper()+ext
+    
 def pageGen(template="templates/modele0.odt", data=[], title="Joli titre"):
     """
     Crée un fichier temporaire au format ODT
@@ -35,7 +45,7 @@ def pageGen(template="templates/modele0.odt", data=[], title="Joli titre"):
     for photo, texte in data:
         # insertion de la photo
         image=cells[i].getElementsByTagName("draw:image")[0]
-        target="Pictures/{}".format(os.path.basename(photo))
+        target=hashImageFileName(photo)
         image.setAttribute("xlink:href", target)
         with open(photo,"rb") as infile:
             result.writestr(target, infile.read())
