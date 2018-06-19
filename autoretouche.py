@@ -67,6 +67,10 @@ class FaceImage(object):
         else:
             self.ok=True
             x, y, w, h = faces[0]
+            R=self.size[1]/self.size[0]
+            if h/w < R: # the face rectangle is not high enough
+                y=int((R-1)*h/2)
+                h=int(R*w) # so h/w is quite R
             # int() casts are necessary since cv2 uses int32 which
             # is not JSON serializable to communicate with Javascript
             self.cropRect = {"x": int(x), "y": int(y), "w": int(w), "h": int(h)}
@@ -94,10 +98,10 @@ class FaceImage(object):
     @property
     def toDataUrl(self):
         """
-        returns a DataUrl bytes with self.cropped as an image
+        returns a DataUrl unicode string with self.cropped as an image
         """
         data=cv2.imencode(".jpg",self.cropped)[1].tostring()
-        return jpgPrefix+base64.b64encode(data)
+        return (jpgPrefix+base64.b64encode(data)).decode("ascii")
 
     def saveAs(self, path):
         """

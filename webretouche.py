@@ -189,7 +189,7 @@ WHERE surname = '{nom}' and givenname = '{prenom}'
             if photo:
                 photo=open(os.path.join(thisdir,"photos",photo),'rb').read()
                 photo=jpgPrefix+base64.b64encode(photo)
-                oldimage=photo
+                oldimage=photo.decode("ascii")
                 message="Trouvé(e) avec la photo"
                 cssclass="orange"
         return {
@@ -225,4 +225,5 @@ WHERE surname = '{nom}' and givenname = '{prenom}'
 
         
 if __name__=="__main__":
+    print("service dans quelques secondes à http://localhost:8901")
     cherrypy.quickstart(Retouche(),'/','cherryApp.conf')
