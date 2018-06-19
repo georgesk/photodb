@@ -8,6 +8,7 @@ les photos sont prêtes à être imprimées avec un texte sous chacune
 from io import BytesIO, StringIO
 import zipfile
 import xml.dom.minidom
+import os
 
 def pageGen(template="templates/modele0.odt", data=[], title="Joli titre"):
     """
@@ -33,7 +34,16 @@ def pageGen(template="templates/modele0.odt", data=[], title="Joli titre"):
     i=1
     for photo, texte in data:
         # insertion de la photo
+        image=cells[i].getElementsByTagName("draw:image")[0]
+        target="Pictures/{}".format(os.path.basename(photo))
+        image.setAttribute("xlink:href", target)
+        with open(photo,"rb") as infile:
+            result.writestr(target, infile.read())
+        # insertion du texte
+        t=cells[i].getElementsByTagName("text:s")[0].nextSibling
+        t.replaceWholeText(texte)
         i+=1
+        # limitation à 36 cases de tableau !
         if i > 36:
             break
         
@@ -46,8 +56,15 @@ def pageGen(template="templates/modele0.odt", data=[], title="Joli titre"):
     return zipIO
 
 if __name__=="__main__":
-    zipIO=pageGen()
+    import re
+    pat=re.compile("_[0-9a-f]+\.jpg")
+    def textFrom(f):
+        return pat.sub("",f)
+    
+    example="/home/georgesk/tex/classes/2017-2018/photodb/var-lib-photodb/photodb/photos"
+    _,_,fnames=next(os.walk(example))
+    fnames=[f for f in fnames if f.endswith('.jpg')]
+    data=[(os.path.join(example,f),textFrom(f)) for f in fnames[:36]]
+    zipIO=pageGen(data=data)
     with open("/tmp/montest.odt",'wb') as outfile:
         outfile.write(zipIO.read())
-        
-    
