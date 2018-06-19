@@ -1,0 +1,5 @@
+#!/bin/sh
+
+sudo su www-data
+cd /var/lib/photodb
+exec python3 webretouche.py
